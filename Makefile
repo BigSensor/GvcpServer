@@ -5,8 +5,8 @@ CFLAGS = -DDEBUG
 
 SERVER_OBJS = gvcpServer.o
 
-all: gvcpServer
-gvcpServer: $(SERVER_OBJS) 
+all: GvcpServer
+GvcpServer: $(SERVER_OBJS) 
 	$(CC) -o $@ $(SERVER_OBJS) $(LDFLAGS) 
 
 %.o : %.c
@@ -14,4 +14,4 @@ gvcpServer: $(SERVER_OBJS)
 
 
 clean:
-	rm -f *.o gvcpServer
+	rm -f *.o GvcpServer
