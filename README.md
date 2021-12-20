@@ -6,4 +6,4 @@ This project implements a network port industrial camera based on GVCP protocol 
 git clone https://github.com/BigSensor/GvcpServer  
 cd GvcpServer  
 make  
-./GvcpServer  
+./gvcpServer  
