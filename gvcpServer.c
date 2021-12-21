@@ -160,11 +160,11 @@ struct gvcp_readmem_ack {
 #else
 #define MY_DEV_NAME "ens33"
 #endif
-char m_szLocalIp[32]="192.168.101.57";
+char m_szLocalIp[32]="192.168.1.230";
 char m_szLocalMask[32]="255.255.255.0";
-char m_szLocalGateway[32]="192.168.101.254";
+char m_szLocalGateway[32]="192.168.1.254";
 char m_szLocalMac[32];
-uint32 m_dwLocalPort;
+uint32 m_dwLocalPort=3956;
 uint8 m_LocalMacAddr[ETH_ALEN];
 char m_szRemoteIp[32];
 char m_szRemoteMask[32];
@@ -191,7 +191,7 @@ int gvcp_ack_discover(int iFd,char* szIp,char* szMask,char* szGateway, uint16 wR
 		}
 		bNeedClose=1;
 	}
-    if (setsockopt(iFd, SOL_SOCKET, SO_BROADCAST | SO_REUSEADDR, &iOptval, sizeof(int)) < 0)
+    if (setsockopt(iFd, SOL_SOCKET, SO_BROADCAST | SO_REUSEADDR, (char*)&iOptval, sizeof(int)) < 0)
     {
         printf("setsockopt failed!");
     }
@@ -232,7 +232,7 @@ int gvcp_ack_discover(int iFd,char* szIp,char* szMask,char* szGateway, uint16 wR
             return -1;
         }
         printf("gvcp_ack_discover=%s, rgMessageLen=%d,iSendbytes=%d\n", rgMessage, dwMsgLen, iSendbytes);
-        sleep(1);
+        //sleep(1);
     }
 	if(bNeedClose>0)
 	{
@@ -303,7 +303,7 @@ int gvcp_cmd_discover(int iFd)
 			return -1;
 		}
 		printf("gvcp_cmd_discover=%s, rgMessageLen=%d,iSendbytes=%d\n", rgMessage, dwMsgLen, iSendbytes);
-		sleep(1);
+		//sleep(1);
 	}
 	if (bNeedClose > 0)
 	{
@@ -373,7 +373,7 @@ int gvcp_ask_readreg(int iFd, uint16 wReqID,uint32 dwPort, uint32 dwRegAddr, uin
 			return -1;
 		}
 		printf("gvcp_ask_readreg=%s, rgMessageLen=%d,iSendbytes=%d\n", rgMessage, dwMsgLen, iSendbytes);
-		sleep(1);
+		//sleep(1);
 	}
 	if (bNeedClose > 0)
 	{
@@ -443,7 +443,7 @@ int gvcp_ask_forceip(int iFd, uint16 wReqID, uint32 dwPort)
 			return -1;
 		}
 		printf("gvcp_ask_forceip=%s, rgMessageLen=%d,iSendbytes=%d\n", rgMessage, dwMsgLen, iSendbytes);
-		sleep(1);
+		//sleep(1);
 	}
 	if (bNeedClose > 0)
 	{
@@ -513,7 +513,7 @@ int gvcp_ask_writereg(int iFd, uint16 wReqID, uint32 dwPort)
 			return -1;
 		}
 		printf("gvcp_ask_writereg=%s, rgMessageLen=%d,iSendbytes=%d\n", rgMessage, dwMsgLen, iSendbytes);
-		sleep(1);
+		//sleep(1);
 	}
 	if (bNeedClose > 0)
 	{
@@ -529,7 +529,7 @@ int gvcp_ask_writereg(int iFd, uint16 wReqID, uint32 dwPort)
 
 int getLoaclMac(char *szMac) 
 {
-#if 1
+#ifndef _WINDOWS_
     char *device=MY_DEV_NAME; //eth0是网卡设备名
     //unsigned char macaddr[ETH_ALEN]; //ETH_ALEN（6）是MAC地址长度
     struct ifreq req;
@@ -598,7 +598,7 @@ int getLoaclMac(char *szMac)
 }
 #ifdef _WINDOWS_
 extern void InitConsoleWindow();
-int UdpServer(void) 
+int GvcpServer(void) 
 #else
 int main(void) 
 #endif
@@ -634,7 +634,7 @@ int main(void)
 	{
 		printf("socket ok\n");
 	}
-    if (setsockopt(iFd, SOL_SOCKET, SO_REUSEADDR, &iOptval, sizeof(int)) < 0)
+    if (setsockopt(iFd, SOL_SOCKET, SO_REUSEADDR, (char*)&iOptval, sizeof(int)) < 0)
     {
         printf("setsockopt failed!\n");
     }
@@ -689,7 +689,7 @@ int main(void)
 			m_CmdHeader.wReqID = ntohs(pHeader->wReqID);// request id = 1;READREG id=12345
 			if (m_CmdHeader.cMsgKeyCode == 0x42 && m_CmdHeader.wCmd == GVCP_DISCOVERY_CMD)
 			{
-				gvcp_ack_discover(iFd, m_szLocalIp, m_szLocalMask, m_szLocalGateway, m_CmdHeader.wReqID, m_dwLocalPort, m_LocalMacAddr);
+				gvcp_ack_discover(iFd, m_szLocalIp, m_szLocalMask, m_szLocalGateway, m_CmdHeader.wReqID, m_dwRemotePort, m_LocalMacAddr);
 			}
 			else if (m_CmdHeader.cMsgKeyCode == 0x42 && m_CmdHeader.wCmd == GVCP_FORCEIP_CMD&&iRecvLen>=sizeof(struct gvcp_forceip_cmd))
 			{
@@ -709,11 +709,11 @@ int main(void)
 				{
 					
 					GetAddr.sin_addr.s_addr = *((uint32*)&pMyCmd->payload.CurIP[12]);// = inet_addr("192.168.101.57");//last 4 byte
-					strncpy(m_szLocalIp, inet_ntoa(Addr.sin_addr), 16);
+					strncpy(m_szLocalIp, inet_ntoa(GetAddr.sin_addr), 16);
 					GetAddr.sin_addr.s_addr = *((uint32*)&pMyCmd->payload.SubMask[12]);// = inet_addr("255.255.255.0");//last 4 byte
 					strncpy(m_szLocalMask, "255.255.255.0", 16);
 					GetAddr.sin_addr.s_addr = *((uint32*)&pMyCmd->payload.Gateway[12]);// = inet_addr("192.168.101.254");//last 4 byte
-					strncpy(m_szLocalGateway, inet_ntoa(Addr.sin_addr), 16);
+					strncpy(m_szLocalGateway, inet_ntoa(GetAddr.sin_addr), 16);
 					if(SetIfAddr(MY_DEV_NAME, m_szLocalIp, m_szLocalMask, m_szLocalGateway)<0)
 						printf("SetIfAddr Failed"); 
 					//reget if addr
@@ -986,6 +986,7 @@ int addRoute(char *ipAddr, char *mask,char *gateWay,char* devName)
 {
   int fd;
   int rc = 0;
+#ifndef _WINDOWS_
   struct sockaddr_in _sin;
   struct sockaddr_in *sin = &_sin;
   struct rtentry  rt;
@@ -1037,6 +1038,7 @@ int addRoute(char *ipAddr, char *mask,char *gateWay,char* devName)
   }while(0);
  
   close(fd);
+#endif//_WINDOWS_
   return rc;
 }
 
